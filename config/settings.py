@@ -1,6 +1,6 @@
 """
 全局配置文件
-包含 DashScope API 配置、系统参数等
+包含 OpenRouter API 配置、系统参数等
 """
 
 import os
@@ -15,9 +15,11 @@ load_dotenv()
 class Settings:
     """全局配置类"""
     
-    # ==================== API 配置 ====================
-    DASHSCOPE_API_KEY: str = os.getenv('DASHSCOPE_API_KEY', '')
-    VLM_MODEL: str = os.getenv('VLM_MODEL', 'qwen-vl-max')
+    # ==================== API 配置（OpenRouter） ====================
+    OPENROUTER_API_KEY: str = os.getenv('OPENROUTER_API_KEY', '')
+    OPENROUTER_BASE_URL: str = os.getenv('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1')
+    VLM_MODEL: str = os.getenv('VLM_MODEL', 'qwen/qwen3-vl-235b-a22b-instruct')  # OpenRouter 视觉模型
+    VLM_TIMEOUT: int = int(os.getenv('VLM_TIMEOUT', '180'))
     
     # ==================== 系统配置 ====================
     MAX_ITERATIONS: int = int(os.getenv('MAX_ITERATIONS', '8'))
@@ -67,8 +69,8 @@ class Settings:
     @classmethod
     def validate(cls) -> bool:
         """验证配置的有效性"""
-        if not cls.DASHSCOPE_API_KEY:
-            raise ValueError("DASHSCOPE_API_KEY is not set in environment variables")
+        if not cls.OPENROUTER_API_KEY:
+            raise ValueError("OPENROUTER_API_KEY is not set in environment variables")
         
         # 创建必要的目录
         cls.LOGS_DIR.mkdir(parents=True, exist_ok=True)
@@ -78,9 +80,9 @@ class Settings:
     @classmethod
     def get_api_key(cls) -> str:
         """获取 API Key"""
-        if not cls.DASHSCOPE_API_KEY:
-            raise ValueError("DASHSCOPE_API_KEY is not configured")
-        return cls.DASHSCOPE_API_KEY
+        if not cls.OPENROUTER_API_KEY:
+            raise ValueError("OPENROUTER_API_KEY is not configured")
+        return cls.OPENROUTER_API_KEY
     
     @classmethod
     def get_model_name(cls) -> str:
@@ -91,7 +93,7 @@ class Settings:
     def to_dict(cls) -> dict:
         """转换为字典格式"""
         return {
-            'api_key': cls.DASHSCOPE_API_KEY[:10] + '...' if cls.DASHSCOPE_API_KEY else 'Not set',
+            'api_key': cls.OPENROUTER_API_KEY[:10] + '...' if cls.OPENROUTER_API_KEY else 'Not set',
             'model': cls.VLM_MODEL,
             'max_iterations': cls.MAX_ITERATIONS,
             'log_level': cls.LOG_LEVEL,

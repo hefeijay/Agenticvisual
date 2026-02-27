@@ -121,7 +121,7 @@ def main():
         print("\n config errors:")
         for error in errors:
             print(f"  - {error}")
-        print("\n please set DASHSCOPE_API_KEY in environment variables or .env file")
+        print("\n please set OPENROUTER_API_KEY in environment variables or .env file")
         return
     
     print("\n config validation passed")

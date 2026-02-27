@@ -17,8 +17,8 @@ def validate_config() -> list:
     errors = []
     
     # 检查必需的API密钥
-    if not Settings.DASHSCOPE_API_KEY:
-        errors.append("DASHSCOPE_API_KEY 未设置")
+    if not Settings.OPENROUTER_API_KEY:
+        errors.append("OPENROUTER_API_KEY 未设置")
     
     # 确保日志目录存在
     Settings.LOGS_DIR.mkdir(parents=True, exist_ok=True)

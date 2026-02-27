@@ -9,11 +9,11 @@ scikit-learn==1.3.0
 pandas==2.0.3
 
 # VLM API Clients
-dashscope==1.14.0        # 阿里云DashScope (qwen-vl)
+openai>=1.0.0            # OpenRouter (OpenAI兼容接口)
 requests==2.31.0         # HTTP请求
 
-# Optional: 其他VLM客户端（按需安装）
-# openai>=1.0.0          # OpenAI GPT-4V
+# Optional: DashScope（如需使用 main.py 原 DashScope 版本可取消注释）
+# dashscope==1.14.0      # 阿里云DashScope (qwen-vl)
 # anthropic>=0.18.0      # Anthropic Claude
 # google-generativeai    # Google Gemini
 
