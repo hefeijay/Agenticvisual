@@ -37,6 +37,18 @@ env/
 
 # Environment Variables
 .env
+.env.local
+.env.*.local
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+.npm
+.yarn/
+yarn.lock
+pnpm-lock.yaml
 
 # Logs
 logs/

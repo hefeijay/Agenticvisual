@@ -2,7 +2,7 @@
 散点图专用工具
 """
 
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 import numpy as np
 import copy
 import json
@@ -360,14 +360,15 @@ def brush_region(vega_spec: Dict, x_range: Tuple[float, float], y_range: Tuple[f
     }
 
 
-def change_encoding(vega_spec: Dict, channel: str, field: str) -> Dict[str, Any]:
+def change_encoding(vega_spec: Dict, channel: str, field: str, type: Optional[str] = None) -> Dict[str, Any]:
     """
     Modify the field mapping of the specified encoding channel
-    
+
     Args:
         vega_spec: Vega spec
         channel: encoding channel ("x", "y", "color", "size", "shape")
         field: new field name
+        type: optional Vega-Lite type ("quantitative", "nominal", "ordinal", "temporal"); inferred from data if omitted
     """
     new_spec = copy.deepcopy(vega_spec)
     
@@ -380,15 +381,19 @@ def change_encoding(vega_spec: Dict, channel: str, field: str) -> Dict[str, Any]
             'error': f'Field "{field}" not found in data. Available fields: {available_fields}'
         }
     
-    # 推断字段类型
-    field_type = 'nominal'
-    if data:
-        sample_value = data[0].get(field)
-        if isinstance(sample_value, (int, float)):
-            field_type = 'quantitative'
-        elif isinstance(sample_value, str):
-            if any(sep in sample_value for sep in ['-', '/', ':']):
-                field_type = 'temporal'
+    # 使用传入的 type，或推断字段类型
+    valid_types = ('quantitative', 'nominal', 'ordinal', 'temporal')
+    if type and type in valid_types:
+        field_type = type
+    else:
+        field_type = 'nominal'
+        if data:
+            sample_value = data[0].get(field)
+            if isinstance(sample_value, (int, float)):
+                field_type = 'quantitative'
+            elif isinstance(sample_value, str):
+                if any(sep in sample_value for sep in ['-', '/', ':']):
+                    field_type = 'temporal'
     
     # 更新指定通道的 encoding
     if 'encoding' not in new_spec:

@@ -20,24 +20,40 @@ class AutonomousExplorationMode:
         self.prompt_mgr = get_prompt_manager()
     
     def execute(self, user_query: str, vega_spec: Dict,
-                image_base64: str, chart_type, context: Dict = None) -> Dict:
+                image_base64: str, chart_type, context: Dict = None,
+                event_callback=None) -> Dict:
         """执行自主探索分析（按DashScope标准多轮对话格式）"""
         system_prompt = self.prompt_mgr.assemble_system_prompt(
             chart_type=chart_type,
             mode="autonomous_exploration",
             include_tools=True
         )
-        
+
+        def _emit(event_type: str, data: dict):
+            if event_callback:
+                try:
+                    event_callback(event_type, data)
+                except Exception:
+                    pass
+
         # 从context读取messages历史
         messages = context.get('autonomous_messages', []) if context else []
         explorations = context.get('autonomous_explorations', []) if context else []
-        
-        # 首次调用：初始化第一条user消息
+
+        # 首次调用：初始化第一条user消息；续探：追加新方向
         if len(messages) == 0:
             messages.append({
                 "role": "user",
                 "content": [
-                    {"text": f"请自主探索这个视图，探索方向：{user_query}"},
+                    {"text": f"Autonomously explore this view. Exploration direction: {user_query}"},
+                    {"image": f"data:image/png;base64,{image_base64}"}
+                ]
+            })
+        else:
+            messages.append({
+                "role": "user",
+                "content": [
+                    {"text": f"Continue exploring. New direction: {user_query}"},
                     {"image": f"data:image/png;base64,{image_base64}"}
                 ]
             })
@@ -50,8 +66,8 @@ class AutonomousExplorationMode:
         
         for iteration in range(Settings.MAX_EXPLORATION_ITERATIONS):
             iteration_start = time.time()
-            
-            #  日志：打印messages结构
+            _emit("iteration.started", {"iteration": iteration + 1, "user_query": user_query})
+
             app_logger.info(f"探索第{iteration+1}轮 - messages数量: {len(messages)}")
             for idx, msg in enumerate(messages):
                 role = msg['role']
@@ -80,7 +96,13 @@ class AutonomousExplorationMode:
                 "content": [{"text": response.get("content", "")}]
             }
             messages.append(assistant_message)
-            
+            _emit("agent.message", {
+                "iteration": iteration + 1,
+                "text": response.get("content", ""),
+                "key_insights": analysis.get("key_insights", []),
+                "reasoning": analysis.get("reasoning", "")
+            })
+
             #  添加调试日志：检查JSON提取结果
             app_logger.info(f" JSON提取结果:")
             app_logger.info(f"  - tool_call: {analysis.get('tool_call')}")
@@ -110,17 +132,30 @@ class AutonomousExplorationMode:
                 # 只有需要context的工具才传递
                 if tool_name in ('reset_view', 'undo_view'):
                     tool_params['context'] = context
-                
+
+                _emit("tool.started", {
+                    "iteration": iteration + 1,
+                    "tool_name": tool_name,
+                    "tool_input": {k: v for k, v in tool_params.items() if k not in ('vega_spec', 'context')}
+                })
                 app_logger.info(f"Executing tool: {tool_name}")
                 tool_result = self.tool_executor.execute(tool_name, tool_params)
                 
+                tool_result_clean = {k: v for k, v in tool_result.items() if k != 'vega_spec'}
+                _emit("tool.finished", {
+                    "iteration": iteration + 1,
+                    "tool_name": tool_name,
+                    "tool_result": tool_result_clean,
+                    "success": tool_result.get("success", False)
+                })
+
                 # 保存tool_result（排除vega_spec避免序列化问题和数据冗余）
                 iteration_record["tool_execution"] = {
                     "tool_name": tool_name,
                     "tool_params": {k: v for k, v in tool_params.items() if k not in ('vega_spec', 'context')},
-                    "tool_result": {k: v for k, v in tool_result.items() if k != 'vega_spec'}
+                    "tool_result": tool_result_clean
                 }
-                
+
                 if tool_result.get("success"):
                     # 工具执行成功
                     if "vega_spec" in tool_result:
@@ -136,16 +171,21 @@ class AutonomousExplorationMode:
                         # 若会话存在大数据管理器，按区域补点
                         current_spec = self._apply_data_manager(current_spec, context)
                         render_result = self.vega.render(current_spec)
-                        
+
                         if render_result.get("success"):
                             current_image = render_result["image_base64"]
                             iteration_record["images"].append(current_image)
-                            
-                            success_msg = tool_result.get("message", "操作完成")
+                            _emit("view.updated", {
+                                "iteration": iteration + 1,
+                                "spec": current_spec,
+                                "tool_name": tool_name
+                            })
+
+                            success_msg = tool_result.get("message", "Operation completed")
                             messages.append({
                                 "role": "user",
                                 "content": [
-                                    {"text": f" 工具 {tool_name} 执行成功。\n\n结果：{success_msg}\n\n这是更新后的视图："},
+                                    {"text": f"Tool {tool_name} succeeded.\n\nResult: {success_msg}\n\nHere is the updated view:"},
                                     {"image": f"data:image/png;base64,{current_image}"}
                                 ]
                             })
@@ -158,7 +198,7 @@ class AutonomousExplorationMode:
                             messages.append({
                                 "role": "user",
                                 "content": [
-                                    {"text": f" 工具 {tool_name} 执行后渲染失败：{render_error}\n\n当前视图（未变化）："},
+                                    {"text": f"Tool {tool_name} render failed: {render_error}\n\nCurrent view (unchanged):"},
                                     {"image": f"data:image/png;base64,{current_image}"}
                                 ]
                             })
@@ -168,7 +208,7 @@ class AutonomousExplorationMode:
                         messages.append({
                             "role": "user",
                             "content": [
-                                {"text": f" 工具 {tool_name} 执行成功。\n\n分析结果：{success_msg}\n\n视图未变化，当前视图："},
+                                {"text": f"Tool {tool_name} succeeded.\n\nAnalysis result: {success_msg}\n\nView unchanged, current view:"},
                                 {"image": f"data:image/png;base64,{current_image}"}
                             ]
                         })
@@ -179,7 +219,7 @@ class AutonomousExplorationMode:
                     messages.append({
                         "role": "user",
                         "content": [
-                            {"text": f" 工具 {tool_name} 执行失败。\n\n错误原因：{error_msg}\n\n请尝试其他探索方向。\n\n当前视图（未变化）："},
+                            {"text": f"Tool {tool_name} failed.\n\nError: {error_msg}\n\nPlease try a different exploration direction.\n\nCurrent view (unchanged):"},
                             {"image": f"data:image/png;base64,{current_image}"}
                         ]
                     })
@@ -188,7 +228,15 @@ class AutonomousExplorationMode:
             
             iteration_record["duration"] = time.time() - iteration_start
             explorations.append(iteration_record)
-            
+
+            _emit("iteration.finished", {
+                "iteration": iteration + 1,
+                "success": iteration_record.get("success", True),
+                "analysis_summary": iteration_record.get("analysis_summary", {}),
+                "tool_name": iteration_record.get("tool_execution", {}).get("tool_name") if iteration_record.get("tool_execution") else None,
+                "duration": iteration_record["duration"]
+            })
+
             # 检查是否完成探索
             if analysis.get("exploration_complete", False):
                 app_logger.info(f"Exploration complete at iteration {iteration + 1}")
@@ -295,5 +343,5 @@ class AutonomousExplorationMode:
             "successful_iterations": len(successful),
             "all_insights": all_insights,
             "tools_used": tools_used,
-            "summary": f"完成 {len(successful)}/{len(explorations)} 轮探索"
+            "summary": f"Completed {len(successful)}/{len(explorations)} exploration iterations"
         }

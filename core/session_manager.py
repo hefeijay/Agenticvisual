@@ -212,11 +212,11 @@ class SessionManager:
             return candidates[0]
         
         # if cannot determine, use VLM visual recognition
-        prompt = """请识别这个图表的类型。返回JSON格式：
+        prompt = """Identify the chart type. Return in JSON format:
 {
     "chart_type": "bar_chart|line_chart|scatter_plot|parallel_coordinates|heatmap|sankey_diagram",
     "confidence": 0.0-1.0,
-    "reasoning": "判断理由"
+    "reasoning": "Reasoning for your determination"
 }"""
         
         response = self.vlm.call_with_image(prompt, image_base64, expect_json=True)
@@ -232,31 +232,33 @@ class SessionManager:
         
         return ChartType.UNKNOWN
     
-    def process_query(self, session_id: str, user_query: str, benchmark_mode: bool = False) -> Dict:
+    def process_query(self, session_id: str, user_query: str,
+                      benchmark_mode: bool = False, event_callback=None) -> Dict:
         """
         process the user query
-        
+
         Args:
             session_id: the id of the session
             user_query: the user query text
             benchmark_mode: whether in benchmark evaluation mode
-        
+            event_callback: optional callable(event_type, data) for SSE streaming
+
         Returns:
             the processing result
         """
         if session_id not in self.sessions:
             return {"success": False, "error": "Session not found"}
-        
+
         session = self.sessions[session_id]
         session["last_activity"] = time.time()
-        
+
         # 1. intent recognition
         intent = self._recognize_intent(
             user_query,
             session["current_image"],
             session["chart_type"]
         )
-        
+
         # 2. dispatch to different modes based on the intent
         if intent == IntentType.CHITCHAT:
             result = self.chitchat_mode.execute(user_query, session["current_image"], session)
@@ -267,7 +269,8 @@ class SessionManager:
                 session["current_image"],
                 session["chart_type"],
                 session,
-                benchmark_mode=benchmark_mode
+                benchmark_mode=benchmark_mode,
+                event_callback=event_callback
             )
             # update the session state
             if result.get("success"):
@@ -279,8 +282,12 @@ class SessionManager:
                 session["vega_spec"],
                 session["current_image"],
                 session["chart_type"],
-                session
+                session,
+                event_callback=event_callback
             )
+            if result.get("success"):
+                session["vega_spec"] = result.get("final_spec", session["vega_spec"])
+                session["current_image"] = result.get("final_image", session["current_image"])
         
         # 3. update the conversation history
         session["conversation_history"].append({
@@ -401,6 +408,24 @@ class SessionManager:
     def get_session(self, session_id: str) -> Optional[Dict]:
         """get the session data"""
         return self.sessions.get(session_id)
+
+    def get_session_state(self, session_id: str) -> Optional[Dict]:
+        """Return a clean, serializable snapshot of the session (no base64 images)."""
+        session = self.sessions.get(session_id)
+        if not session:
+            return None
+        return {
+            "session_id": session_id,
+            "chart_type": str(session.get("chart_type", "")),
+            "created_at": session.get("created_at"),
+            "last_activity": session.get("last_activity"),
+            "current_spec": session.get("vega_spec"),
+            "spec_history": session.get("spec_history", []),
+            "conversation_history": [
+                {k: v for k, v in entry.items() if k != "result"}
+                for entry in session.get("conversation_history", [])
+            ],
+        }
     
     def reset_view(self, session_id: str) -> Dict:
         """reset the view to the original state"""

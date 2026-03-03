@@ -19,9 +19,9 @@ class GoalOrientedMode:
         self.tool_executor = get_tool_executor()
         self.prompt_mgr = get_prompt_manager()
     
-    def execute(self, user_query: str, vega_spec: Dict, 
-                image_base64: str, chart_type, context: Dict = None, 
-                benchmark_mode: bool = False) -> Dict:
+    def execute(self, user_query: str, vega_spec: Dict,
+                image_base64: str, chart_type, context: Dict = None,
+                benchmark_mode: bool = False, event_callback=None) -> Dict:
         """执行目标导向分析（按DashScope标准多轮对话格式）"""
         if benchmark_mode:
             app_logger.info("🎯 Benchmark mode enabled: ANSWER field will be required in final iteration")
@@ -31,17 +31,32 @@ class GoalOrientedMode:
             include_tools=True,
             benchmark_mode=benchmark_mode
         )
-        
+
+        def _emit(event_type: str, data: dict):
+            if event_callback:
+                try:
+                    event_callback(event_type, data)
+                except Exception:
+                    pass
+
         # 从context读取messages历史（如果有）
         messages = context.get('goal_oriented_messages', []) if context else []
         iterations = context.get('goal_oriented_iterations', []) if context else []
-        
-        # 如果是新会话，初始化第一条user消息
+
+        # 首次调用：初始化第一条user消息；续探：追加新目标
         if len(messages) == 0:
             messages.append({
                 "role": "user",
                 "content": [
-                    {"text": f"请分析这个视图，用户的分析目标是：{user_query}"},
+                    {"text": f"Analyze this view. The user's analysis goal is: {user_query}"},
+                    {"image": f"data:image/png;base64,{image_base64}"}
+                ]
+            })
+        else:
+            messages.append({
+                "role": "user",
+                "content": [
+                    {"text": f"New analysis goal: {user_query}"},
                     {"image": f"data:image/png;base64,{image_base64}"}
                 ]
             })
@@ -53,7 +68,7 @@ class GoalOrientedMode:
         current_image = image_base64
         
         for iteration in range(Settings.MAX_GOAL_ORIENTED_ITERATIONS):
-            # 📊 日志：打印messages结构
+            _emit("iteration.started", {"iteration": iteration + 1, "user_query": user_query})
             app_logger.info(f"iteration {iteration+1} - messages count: {len(messages)}")
             for idx, msg in enumerate(messages):
                 role = msg['role']
@@ -80,10 +95,16 @@ class GoalOrientedMode:
             decision = response.get("parsed_json", {})
             assistant_message = {
                 "role": "assistant",
-                "content": [{"text": response.get("content", "")}]  # VLM原始输出文本
+                "content": [{"text": response.get("content", "")}]
             }
             messages.append(assistant_message)
-            
+            _emit("agent.message", {
+                "iteration": iteration + 1,
+                "text": response.get("content", ""),
+                "key_insights": decision.get("key_insights", []),
+                "reasoning": decision.get("reasoning", "")
+            })
+
             # 📊 日志
             tool_info = decision.get('tool_call', {}).get('tool', 'None') if decision.get('tool_call') else 'None'
             achieved = decision.get('goal_achieved', False)
@@ -115,19 +136,30 @@ class GoalOrientedMode:
                 tool_name = tool_call["tool"]
                 tool_params = tool_call.get("params", {})
                 tool_params['vega_spec'] = current_spec
-                # 只有需要context的工具才传递
                 if tool_name in ('reset_view', 'undo_view'):
                     tool_params['context'] = context
-                
+
+                _emit("tool.started", {
+                    "iteration": iteration + 1,
+                    "tool_name": tool_name,
+                    "tool_input": {k: v for k, v in tool_params.items() if k not in ('vega_spec', 'context')}
+                })
                 tool_result = self.tool_executor.execute(tool_name, tool_params)
-                
+                tool_result_clean = {k: v for k, v in tool_result.items() if k != 'vega_spec'}
+                _emit("tool.finished", {
+                    "iteration": iteration + 1,
+                    "tool_name": tool_name,
+                    "tool_result": tool_result_clean,
+                    "success": tool_result.get("success", False)
+                })
+
                 # 保存工具执行记录（排除vega_spec避免序列化问题和数据冗余）
                 iteration_record["tool_execution"] = {
                     "tool_name": tool_name,
                     "tool_params": {k: v for k, v in tool_params.items() if k not in ('vega_spec', 'context')},
-                    "tool_result": {k: v for k, v in tool_result.items() if k != 'vega_spec'}
+                    "tool_result": tool_result_clean
                 }
-                
+
                 if tool_result.get("success") and "vega_spec" in tool_result:
                     # 情况1：工具成功且返回新的vega_spec（修改型工具）
                     # 先将旧 spec 入栈（排除 reset/undo）
@@ -145,13 +177,18 @@ class GoalOrientedMode:
                     if render_result.get("success"):
                         current_image = render_result["image_base64"]
                         iteration_record["images"].append(current_image)
-                        
+                        _emit("view.updated", {
+                            "iteration": iteration + 1,
+                            "spec": current_spec,
+                            "tool_name": tool_name
+                        })
+
                         # 追加user消息：工具成功反馈
-                        success_msg = tool_result.get("message", "操作完成")
+                        success_msg = tool_result.get("message", "Operation completed")
                         messages.append({
                             "role": "user",
                             "content": [
-                                {"text": f"✅ 工具 {tool_name} 执行成功。\n\n结果：{success_msg}\n\n这是更新后的视图："},
+                                {"text": f"✅ Tool {tool_name} succeeded.\n\nResult: {success_msg}\n\nHere is the updated view:"},
                                 {"image": f"data:image/png;base64,{current_image}"}
                             ]
                         })
@@ -166,7 +203,7 @@ class GoalOrientedMode:
                         messages.append({
                             "role": "user",
                             "content": [
-                                {"text": f"❌ 工具 {tool_name} 执行后渲染失败：{render_error}\n\n当前视图（未变化）："},
+                                {"text": f"❌ Tool {tool_name} render failed after execution: {render_error}\n\nCurrent view (unchanged):"},
                                 {"image": f"data:image/png;base64,{current_image}"}
                             ]
                         })
@@ -177,7 +214,7 @@ class GoalOrientedMode:
                     messages.append({
                         "role": "user",
                         "content": [
-                            {"text": f"✅ 工具 {tool_name} 执行成功。\n\n分析结果：{analysis_msg}\n\n视图未变化，当前视图："},
+                            {"text": f"✅ Tool {tool_name} succeeded.\n\nAnalysis result: {analysis_msg}\n\nView unchanged, current view:"},
                             {"image": f"data:image/png;base64,{current_image}"}
                         ]
                     })
@@ -190,7 +227,7 @@ class GoalOrientedMode:
                     messages.append({
                         "role": "user",
                         "content": [
-                            {"text": f"❌ 工具 {tool_name} 执行失败。\n\n错误原因：{error_msg}\n\n请选择其他可用工具，或如果目标已达成，设置 goal_achieved: true。\n\n当前视图（未变化）："},
+                            {"text": f"❌ Tool {tool_name} failed.\n\nError: {error_msg}\n\nPlease try another tool, or set goal_achieved: true if the goal is already met.\n\nCurrent view (unchanged):"},
                             {"image": f"data:image/png;base64,{current_image}"}
                         ]
                     })
@@ -198,8 +235,15 @@ class GoalOrientedMode:
                     iteration_record["success"] = False
                     app_logger.warning(f"Tool {tool_name} failed: {error_msg}")
             
+            _emit("iteration.finished", {
+                "iteration": iteration + 1,
+                "success": iteration_record.get("success", True),
+                "analysis_summary": iteration_record.get("analysis_summary", {}),
+                "goal_achieved": decision.get("goal_achieved", False),
+                "tool_name": iteration_record.get("tool_execution", {}).get("tool_name") if iteration_record.get("tool_execution") else None
+            })
             iterations.append(iteration_record)
-        
+
         # 保存messages和iterations到context（用于下次调用）
         if context is not None:
             context['goal_oriented_messages'] = messages

@@ -49,5 +49,11 @@ bert-score>=0.3.13  # BERTScore for semantic answer matching
 #    - Node.js方式：npm install -g vega vega-lite vega-cli canvas
 streamlit>=1.28.0
 
+# Web server (new)
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+sse-starlette>=1.6.0
+python-multipart>=0.0.6
+aiofiles>=23.0.0
 
 #Test push --Zixin 20260211 try2

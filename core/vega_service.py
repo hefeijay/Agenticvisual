@@ -141,49 +141,40 @@ class VegaService:
     
     def render(self, vega_spec: Dict, output_format: str = "png") -> Dict[str, Any]:
         """
-        Render Vega-Lite or Vega specification to image
-        
-        Rendering strategy:
-        - Always use vega-cli (vl2png for Vega-Lite, vg2png for Vega)
-        - If CLI not available, use mock rendering
-        
-        Args:
-            vega_spec: Vega-Lite or Vega JSON specification
-            output_format: Output format (png/svg)
-        
-        Returns:
-            {
-                "success": bool,
-                "image_base64": str,  # base64 encoded image
-                "image_path": str,  # temporary file path
-                "renderer": str,  # renderer used
-                "error": str
-            }
+        Render Vega-Lite or Vega specification to image.
+
+        Priority:
+          1. vega-cli (vl2png / vg2png) — highest quality
+          2. vl-convert-python (vlc)    — pure Python, no Node.js required
+          3. mock render (1×1 pixel)    — last resort, VLM will see a blank image
         """
         try:
-            # Always use CLI rendering (no altair)
             if self.require_cli:
                 if not self.vega_cli_available and not self.vega_full_cli_available:
                     return {
                         "success": False,
-                        "error": "vega-cli is required but not available. Please install Node.js and vega-cli. See NODEJS_VEGA_INSTALLATION.md"
+                        "error": "vega-cli is required but not available. Please install Node.js and vega-cli.",
                     }
                 return self._render_with_cli(vega_spec, output_format)
-            
-            # Normal mode: try CLI first
-            # Check if it's Vega format
+
             is_full_vega = self._is_full_vega_spec(vega_spec)
-            if is_full_vega:
-                if self.vega_full_cli_available:
-                    return self._render_with_cli(vega_spec, output_format)
-            else:
-                if self.vega_cli_available:
-                    return self._render_with_cli(vega_spec, output_format)
-            
-            # If CLI not available, use mock rendering
-            app_logger.warning("No CLI renderer available, using mock rendering")
+
+            # 1. Try CLI
+            if is_full_vega and self.vega_full_cli_available:
+                return self._render_with_cli(vega_spec, output_format)
+            if not is_full_vega and self.vega_cli_available:
+                return self._render_with_cli(vega_spec, output_format)
+
+            # 2. Try vl-convert (pure Python)
+            if self.altair_available and not is_full_vega:
+                result = self._render_with_vlconvert(vega_spec)
+                if result.get("success"):
+                    return result
+
+            # 3. Fallback mock
+            app_logger.warning("No real renderer available, using mock (blank) rendering")
             return self._mock_render(vega_spec)
-            
+
         except Exception as e:
             app_logger.error(f"Render error: {e}")
             return {"success": False, "error": str(e)}
@@ -265,6 +256,24 @@ class VegaService:
                 )
                 return self._mock_render(vega_spec)
     
+    def _render_with_vlconvert(self, vega_spec: Dict) -> Dict[str, Any]:
+        """Pure-Python rendering via vl-convert-python (no Node.js needed)."""
+        try:
+            import vl_convert as vlc  # noqa: PLC0415
+            spec_str = json.dumps(vega_spec, ensure_ascii=False)
+            png_bytes = vlc.vegalite_to_png(vl_spec=spec_str, scale=2)
+            image_base64 = base64.b64encode(png_bytes).decode("utf-8")
+            app_logger.info("Rendered using vl-convert (pure Python)")
+            return {
+                "success": True,
+                "image_base64": image_base64,
+                "image_path": None,
+                "renderer": "vl-convert",
+            }
+        except Exception as e:
+            app_logger.warning(f"vl-convert rendering failed: {e}")
+            return {"success": False, "error": str(e)}
+
     def _mock_render(self, vega_spec: Dict) -> Dict:
         """
         mock rendering (return a placeholder image)
