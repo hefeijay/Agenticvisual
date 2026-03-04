@@ -124,7 +124,7 @@ export default function ChartCanvas({ spec, specHistory, onSelectSpec }) {
         </div>
       </div>
 
-      {/* main area */}
+      {/* main area：图表区限制最大高度，轨迹自然上移 */}
       <div className="flex flex-col overflow-hidden" style={{ flex: 1 }}>
         {showSpecJson ? (
           <pre className="overflow-auto p-3 font-mono text-xs" style={{
@@ -135,7 +135,16 @@ export default function ChartCanvas({ spec, specHistory, onSelectSpec }) {
             {specStr}
           </pre>
         ) : (
-          <div ref={wrapperRef} style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+          <div
+            ref={wrapperRef}
+            style={{
+              flex: '1 1 0',
+              minHeight: 0,
+              maxHeight: specHistory.length > 0 ? '78%' : '100%',
+              overflow: 'hidden',
+              position: 'relative',
+            }}
+          >
             {!spec ? (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)' }}>
                 <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--border-strong)" strokeWidth="0.8" style={{ marginBottom: 16 }}>
@@ -169,14 +178,16 @@ export default function ChartCanvas({ spec, specHistory, onSelectSpec }) {
           </div>
         )}
 
-        {/* timeline */}
+        {/* timeline：图表区已限高 78%，轨迹紧贴图表下方 */}
         {specHistory.length > 0 && (
           <div style={{
             borderTop: '1px solid var(--border)',
-            padding: '10px 14px',
+            marginTop: -6,
+            padding: '4px 14px 6px',
             background: 'var(--surface)',
+            flexShrink: 0,
           }}>
-            <div className="section-label">Iteration Timeline</div>
+            <div className="section-label" style={{ marginBottom: 2 }}>Iteration Timeline</div>
             <div className="timeline-rail">
               {specHistory.map((item, idx) => (
                 <TimelineItem

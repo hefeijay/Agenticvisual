@@ -13,7 +13,7 @@
         {"Horsepower": 225, "Miles_per_Gallon": 12, "Origin": "USA"},
         {"Horsepower": 190, "Miles_per_Gallon": 13, "Origin": "USA"},
         {"Horsepower": 170, "Miles_per_Gallon": 15, "Origin": "USA"},
-        {"Horsepower": 160, "Miles_per_Gallon": 16, "Origin": "USA"},
+        {"Horsepower": 160, "Miles_pear_Gallon": 16, "Origin": "USA"},
         {"Horsepower": 150, "Miles_per_Gallon": 17, "Origin": "USA"},
         {"Horsepower": 97, "Miles_per_Gallon": 24, "Origin": "Europe"},
         {"Horsepower": 88, "Miles_per_Gallon": 27, "Origin": "Europe"},

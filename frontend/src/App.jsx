@@ -127,10 +127,10 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Main 3-column layout ── */}
+      {/* ── Main 3-column：左侧数据 280，中间图表略窄，右侧对话更宽 ── */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '280px 1fr 360px',
+        gridTemplateColumns: '280px 1fr minmax(360px, 0.6fr)',
         flex: 1,
         overflow: 'hidden',
         gap: 0,
