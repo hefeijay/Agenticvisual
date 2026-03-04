@@ -149,7 +149,7 @@ export default function DataPanel({ onSessionCreated, sessions, currentSessionId
                   style={{
                     justifyContent: 'flex-start',
                     fontFamily: "'JetBrains Mono', monospace",
-                    ...(s.session_id === currentSessionId ? { borderColor: 'var(--accent)', boxShadow: '0 0 8px var(--accent-glow)' } : {}),
+                    ...(s.session_id === currentSessionId ? { borderColor: 'var(--accent)', background: 'rgba(99, 102, 241, 0.06)', boxShadow: '0 0 0 3px var(--accent-glow)' } : {}),
                   }}
                 >
                   {s.session_id.slice(0, 8)}...
@@ -206,7 +206,7 @@ export default function DataPanel({ onSessionCreated, sessions, currentSessionId
                   </div>
                 ) : (
                   <div>
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" style={{ margin: '0 auto 8px', display: 'block', opacity: 0.6 }}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" style={{ margin: '0 auto 8px', display: 'block', opacity: 0.5 }}>
                       <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
                       <polyline points="17 8 12 3 7 8" />
                       <line x1="12" y1="3" x2="12" y2="15" />

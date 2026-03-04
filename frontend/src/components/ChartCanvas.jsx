@@ -9,7 +9,7 @@ function TimelineItem({ record, isActive, onClick }) {
     <div className={`timeline-item ${isActive ? 'active' : ''}`} onClick={onClick} title={toolName}>
       <div className="flex items-center justify-between">
         <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--accent)' }}>#{iter}</span>
-        <span style={{ fontSize: 9, width: 8, height: 8, borderRadius: '50%', background: success ? 'var(--success)' : 'var(--danger)', display: 'inline-block', boxShadow: success ? '0 0 6px var(--success)' : '0 0 6px var(--danger)' }} />
+        <span style={{ fontSize: 9, width: 8, height: 8, borderRadius: '50%', background: success ? 'var(--success)' : 'var(--danger)', display: 'inline-block' }} />
       </div>
       <div className="truncate text-xs" style={{ color: 'var(--text-dim)' }}>{toolName}</div>
       {record.analysis_summary?.key_insights?.[0] && (
@@ -63,31 +63,31 @@ export default function ChartCanvas({ spec, specHistory, onSelectSpec }) {
         ...(spec.config || {}),
         background: 'transparent',
         axis: {
-          domainColor: '#334155',
-          gridColor: 'rgba(0, 240, 255, 0.06)',
-          tickColor: '#334155',
-          labelColor: '#94a3b8',
-          titleColor: '#cbd5e1',
+          domainColor: '#daddec',
+          gridColor: 'rgba(99, 102, 241, 0.06)',
+          tickColor: '#c5c9db',
+          labelColor: '#64748b',
+          titleColor: '#1e1b4b',
           labelFont: 'Inter',
           titleFont: 'Inter',
         },
         legend: {
-          labelColor: '#94a3b8',
-          titleColor: '#cbd5e1',
+          labelColor: '#64748b',
+          titleColor: '#1e1b4b',
           labelFont: 'Inter',
           titleFont: 'Inter',
         },
         title: {
-          color: '#e2e8f0',
-          font: 'Orbitron',
+          color: '#1e1b4b',
+          font: 'Inter',
           fontSize: 14,
-          fontWeight: 500,
+          fontWeight: 600,
         },
         view: {
-          stroke: 'rgba(0, 240, 255, 0.08)',
+          stroke: '#daddec',
         },
         range: {
-          category: ['#00f0ff', '#7c3aed', '#00ff88', '#ffb800', '#ff3366', '#60a5fa', '#f472b6', '#a78bfa'],
+          category: ['#6366f1', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#ec4899', '#a78bfa'],
         },
       },
     }
@@ -95,7 +95,6 @@ export default function ChartCanvas({ spec, specHistory, onSelectSpec }) {
     vegaEmbed(containerRef.current, embedSpec, {
       actions: { export: true, source: true, compiled: false, editor: true },
       renderer: 'canvas',
-      theme: 'dark',
     })
       .then((result) => { viewRef.current = result.view })
       .catch((err) => setRenderError(err.message || String(err)))
@@ -156,9 +155,8 @@ export default function ChartCanvas({ spec, specHistory, onSelectSpec }) {
         {showSpecJson ? (
           <pre className="overflow-auto p-3 font-mono text-xs" style={{
             flex: 1,
-            color: 'var(--accent)',
-            background: 'rgba(0, 240, 255, 0.02)',
-            opacity: 0.8,
+            color: 'var(--text)',
+            background: 'var(--surface2)',
           }}>
             {specStr}
           </pre>
@@ -166,12 +164,12 @@ export default function ChartCanvas({ spec, specHistory, onSelectSpec }) {
           <div ref={wrapperRef} style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
             {!spec ? (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)' }}>
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="0.8" style={{ opacity: 0.3, marginBottom: 16 }}>
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--border-strong)" strokeWidth="0.8" style={{ marginBottom: 16 }}>
                   <rect x="3" y="3" width="18" height="18" rx="2" />
                   <polyline points="7 14 11 10 15 13 19 8" />
-                  <circle cx="17" cy="8" r="1.5" fill="var(--accent)" stroke="none" opacity="0.5" />
+                  <circle cx="17" cy="8" r="1.5" fill="var(--accent)" stroke="none" opacity="0.3" />
                 </svg>
-                <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: 11, letterSpacing: '0.1em', opacity: 0.5 }}>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 600, letterSpacing: '0.04em', color: 'var(--text-dim)' }}>
                   AWAITING DATA INPUT
                 </div>
               </div>
@@ -201,7 +199,7 @@ export default function ChartCanvas({ spec, specHistory, onSelectSpec }) {
         {specHistory.length > 0 && (
           <div style={{
             borderTop: '1px solid var(--border)',
-            padding: '8px 12px',
+            padding: '10px 14px',
             background: 'var(--surface)',
           }}>
             <div className="section-label">Iteration Timeline</div>

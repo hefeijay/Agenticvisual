@@ -17,15 +17,14 @@ function ToolLog({ event }) {
   const [open, setOpen] = useState(false)
   const { tool_name, success, tool_result } = event.data
   return (
-    <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, marginTop: 4 }}>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, marginTop: 4 }}>
       <button
         onClick={() => setOpen(v => !v)}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text)', fontSize: 11 }}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text)', fontSize: 11 }}
       >
         <span style={{
           width: 8, height: 8, borderRadius: '50%',
           background: success ? 'var(--success)' : 'var(--danger)',
-          boxShadow: success ? '0 0 6px var(--success)' : '0 0 6px var(--danger)',
           display: 'inline-block', flexShrink: 0,
         }} />
         <span className="font-mono text-xs">{tool_name}</span>
@@ -69,7 +68,7 @@ function ChoiceUI({ options, onSelect }) {
   const [selected, setSelected] = useState(null)
   if (!options?.length) return null
   return (
-    <div style={{ background: 'var(--surface2)', border: '1px solid var(--accent)', borderRadius: 8, padding: 10, boxShadow: '0 0 12px var(--accent-glow)' }}>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--accent)', borderRadius: 10, padding: 12, boxShadow: '0 0 0 3px var(--accent-glow)' }}>
       <div className="section-label">Choose an Option</div>
       <div className="flex flex-col gap-1 mt-1">
         {options.map((opt, i) => (
@@ -104,10 +103,10 @@ function IterationDetail({ record }) {
   const [open, setOpen] = useState(false)
   const { iteration, success, analysis_summary, tool_name, duration } = record
   return (
-    <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6 }}>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8 }}>
       <button
         onClick={() => setOpen(v => !v)}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text)', fontSize: 12 }}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text)', fontSize: 12 }}
       >
         <span style={{ color: 'var(--accent)', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>#{iteration}</span>
         {tool_name && <span className="font-mono text-xs" style={{ color: 'var(--accent-purple)' }}>{tool_name}</span>}
@@ -116,7 +115,6 @@ function IterationDetail({ record }) {
           <span style={{
             width: 8, height: 8, borderRadius: '50%',
             background: success ? 'var(--success)' : 'var(--danger)',
-            boxShadow: success ? '0 0 6px var(--success)' : '0 0 6px var(--danger)',
             display: 'inline-block',
           }} />
         </span>
@@ -314,9 +312,10 @@ export default function AgentPanel({
                 textAlign: 'center',
                 color: 'var(--text-dim)',
                 padding: '40px 0',
-                fontFamily: "'Orbitron', sans-serif",
-                fontSize: 10,
-                letterSpacing: '0.1em',
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: '0.04em',
               }}>
                 GENERATE A VIEW TO START
               </div>
@@ -359,7 +358,7 @@ export default function AgentPanel({
       )}
 
       {/* input bar */}
-      <div style={{ padding: '10px 12px', borderTop: '1px solid var(--border)', background: 'rgba(0, 240, 255, 0.02)', flexShrink: 0 }}>
+      <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
         <div className="flex gap-2">
           <textarea
             className="textarea"

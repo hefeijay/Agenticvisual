@@ -52,7 +52,7 @@ VLM_MODEL=qwen/qwen3-vl-235b-a22b-instruct
 **终端 1 — 后端**
 ```bash
 cd /path/to/Agenticvisual
-uvicorn web_server:app --host 0.0.0.0 --port 8000 --reload
+uvicorn web_server:app --host 0.0.0.0 --port 8001 --reload
 ```
 
 **终端 2 — 前端**

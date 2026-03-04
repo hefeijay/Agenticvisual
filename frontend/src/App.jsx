@@ -81,10 +81,10 @@ export default function App() {
 
       {/* ── Brand bar ── */}
       <div className="brand-bar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5">
-            <circle cx="12" cy="12" r="10" opacity="0.4" />
-            <circle cx="12" cy="12" r="3" fill="var(--accent)" stroke="none" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5">
+            <circle cx="12" cy="12" r="10" opacity="0.3" />
+            <circle cx="12" cy="12" r="3" fill="var(--accent)" stroke="none" opacity="0.8" />
             <line x1="12" y1="2" x2="12" y2="6" />
             <line x1="12" y1="18" x2="12" y2="22" />
             <line x1="2" y1="12" x2="6" y2="12" />
@@ -111,12 +111,13 @@ export default function App() {
           background: 'var(--danger-dim)',
           color: 'var(--danger)',
           fontSize: 12,
-          padding: '6px 20px',
+          padding: '8px 24px',
           display: 'flex',
           alignItems: 'center',
           gap: 8,
-          borderBottom: '1px solid rgba(255, 51, 102, 0.2)',
+          borderBottom: '1px solid rgba(239, 68, 68, 0.15)',
           flexShrink: 0,
+          fontWeight: 500,
         }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
@@ -132,7 +133,7 @@ export default function App() {
         gridTemplateColumns: '280px 1fr 360px',
         flex: 1,
         overflow: 'hidden',
-        gap: '1px',
+        gap: 0,
       }}>
         {/* left: data panel */}
         <div className="glass-panel" style={{
