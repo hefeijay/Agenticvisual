@@ -8,12 +8,12 @@ function TimelineItem({ record, isActive, onClick }) {
   return (
     <div className={`timeline-item ${isActive ? 'active' : ''}`} onClick={onClick} title={toolName}>
       <div className="flex items-center justify-between">
-        <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--accent)' }}>#{iter}</span>
-        <span style={{ fontSize: 9, width: 8, height: 8, borderRadius: '50%', background: success ? 'var(--success)' : 'var(--danger)', display: 'inline-block' }} />
+        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)' }}>#{iter}</span>
+        <span style={{ width: 9, height: 9, borderRadius: '50%', background: success ? 'var(--success)' : 'var(--danger)', display: 'inline-block', flexShrink: 0 }} />
       </div>
-      <div className="truncate text-xs" style={{ color: 'var(--text-dim)' }}>{toolName}</div>
+      <div className="truncate" style={{ fontSize: 12, color: 'var(--text-dim)' }}>{toolName}</div>
       {record.analysis_summary?.key_insights?.[0] && (
-        <div className="truncate" style={{ fontSize: 9, color: 'var(--text-dim)' }}>
+        <div className="truncate" style={{ fontSize: 11, color: 'var(--text-dim)' }}>
           {record.analysis_summary.key_insights[0]}
         </div>
       )}
@@ -87,6 +87,7 @@ export default function ChartCanvas({ spec, specHistory, onSelectSpec }) {
   }
 
   const specStr = spec ? JSON.stringify(spec, null, 2) : ''
+  const hasTimeline = specHistory.length > 0
 
   return (
     <div className="flex flex-col overflow-hidden" style={{ height: '100%', background: 'var(--surface)' }}>
@@ -140,7 +141,7 @@ export default function ChartCanvas({ spec, specHistory, onSelectSpec }) {
             style={{
               flex: '1 1 0',
               minHeight: 0,
-              maxHeight: specHistory.length > 0 ? '78%' : '100%',
+              maxHeight: hasTimeline ? '78%' : '100%',
               overflow: 'hidden',
               position: 'relative',
             }}
@@ -178,16 +179,19 @@ export default function ChartCanvas({ spec, specHistory, onSelectSpec }) {
           </div>
         )}
 
-        {/* timeline：图表区已限高 78%，轨迹紧贴图表下方 */}
-        {specHistory.length > 0 && (
+        {/* timeline：再下移一点，视觉居中 */}
+        {hasTimeline && (
           <div style={{
             borderTop: '1px solid var(--border)',
-            marginTop: -6,
-            padding: '4px 14px 6px',
+            marginTop: 30,
+            padding: '22px 14px 24px',
             background: 'var(--surface)',
             flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
           }}>
-            <div className="section-label" style={{ marginBottom: 2 }}>Iteration Timeline</div>
+            <div className="section-label" style={{ marginBottom: 6, fontSize: 12 }}>Iteration Timeline</div>
             <div className="timeline-rail">
               {specHistory.map((item, idx) => (
                 <TimelineItem
