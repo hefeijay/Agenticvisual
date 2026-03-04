@@ -54,6 +54,7 @@ export default function ChartCanvas({ spec, specHistory, onSelectSpec }) {
     }
 
     const padding = 32
+    // 只合并尺寸与适配，保留 spec 自带的 config，仅设透明背景以融入页面
     const embedSpec = {
       ...spec,
       width: containerSize.width - padding,
@@ -62,33 +63,6 @@ export default function ChartCanvas({ spec, specHistory, onSelectSpec }) {
       config: {
         ...(spec.config || {}),
         background: 'transparent',
-        axis: {
-          domainColor: '#daddec',
-          gridColor: 'rgba(99, 102, 241, 0.06)',
-          tickColor: '#c5c9db',
-          labelColor: '#64748b',
-          titleColor: '#1e1b4b',
-          labelFont: 'Inter',
-          titleFont: 'Inter',
-        },
-        legend: {
-          labelColor: '#64748b',
-          titleColor: '#1e1b4b',
-          labelFont: 'Inter',
-          titleFont: 'Inter',
-        },
-        title: {
-          color: '#1e1b4b',
-          font: 'Inter',
-          fontSize: 14,
-          fontWeight: 600,
-        },
-        view: {
-          stroke: '#daddec',
-        },
-        range: {
-          category: ['#6366f1', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#ec4899', '#a78bfa'],
-        },
       },
     }
 

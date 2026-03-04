@@ -149,7 +149,7 @@ export default function DataPanel({ onSessionCreated, sessions, currentSessionId
                   style={{
                     justifyContent: 'flex-start',
                     fontFamily: "'JetBrains Mono', monospace",
-                    ...(s.session_id === currentSessionId ? { borderColor: 'var(--accent)', background: 'rgba(99, 102, 241, 0.06)', boxShadow: '0 0 0 3px var(--accent-glow)' } : {}),
+                    ...(s.session_id === currentSessionId ? { borderColor: 'var(--accent)', background: 'rgba(37, 99, 235, 0.08)', boxShadow: '0 0 0 3px var(--accent-glow)' } : {}),
                   }}
                 >
                   {s.session_id.slice(0, 8)}...
