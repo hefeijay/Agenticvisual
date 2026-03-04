@@ -89,7 +89,7 @@ export default function ChartCanvas({ spec, specHistory, onSelectSpec }) {
   const specStr = spec ? JSON.stringify(spec, null, 2) : ''
 
   return (
-    <div className="flex flex-col overflow-hidden" style={{ height: '100%' }}>
+    <div className="flex flex-col overflow-hidden" style={{ height: '100%', background: 'var(--surface)' }}>
       {/* toolbar */}
       <div className="panel-header">
         <div className="header-icon">
@@ -124,8 +124,8 @@ export default function ChartCanvas({ spec, specHistory, onSelectSpec }) {
         </div>
       </div>
 
-      {/* main area：图表区限制最大高度，轨迹自然上移 */}
-      <div className="flex flex-col overflow-hidden" style={{ flex: 1 }}>
+      {/* main area：图表区限制最大高度，轨迹自然上移；整块白底 */}
+      <div className="flex flex-col overflow-hidden" style={{ flex: 1, background: 'var(--surface)' }}>
         {showSpecJson ? (
           <pre className="overflow-auto p-3 font-mono text-xs" style={{
             flex: 1,
